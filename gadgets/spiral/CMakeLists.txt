@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.0.0)
 if (WIN32)
   add_definitions(-D__BUILD_GADGETRON_SPIRAL__)
 endif ()
@@ -13,8 +14,8 @@ include_directories(
   ${ARMADILLO_INCLUDE_DIRS}
   )
 
-set(SPIRAL_HEADER_FILES gadgetron_spiral_export.h SpiralToGenericGadget.h vds.h TrajectoryParameters.h)
-set(SPIRAL_SRC_FILES vds.cpp  SpiralToGenericGadget.cpp TrajectoryParameters.cpp)
+set(SPIRAL_HEADER_FILES gadgetron_spiral_export.h SpiralToGenericGadget.h vds.h TrajectoryParameters.h PESpiralDesign.h spline.h mtg_functions_pe.h)
+set(SPIRAL_SRC_FILES vds.cpp  SpiralToGenericGadget.cpp TrajectoryParameters.cpp PESpiralDesign.cpp)
 
 if (CUDA_FOUND)
     include_directories(

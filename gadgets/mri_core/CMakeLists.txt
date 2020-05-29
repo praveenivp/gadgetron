@@ -1,3 +1,4 @@
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 if (WIN32)
     add_definitions(-D__BUILD_GADGETRON_MRICORE__)
 endif ()

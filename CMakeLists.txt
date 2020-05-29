@@ -390,11 +390,13 @@ else()
   message("Do not find TORCH_HOME")
 endif()
 
-option(BUILD_PYTHON_SUPPORT "Build Python gadgets etc" On)
+set(PYTHON_EXECUTABLE "/usr/bin/python3")
+
+option(BUILD_PYTHON_SUPPORT "Build Python gadgets etc" Off)
 
 if (BUILD_PYTHON_SUPPORT)
 
-  option(BUILD_WITH_PYTHON3 "Build with Python 3.x" Off)
+  option(BUILD_WITH_PYTHON3 "Build with Python 3.x" On)
 
 
   if (BUILD_WITH_PYTHON3)
