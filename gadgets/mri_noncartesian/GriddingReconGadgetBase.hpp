@@ -78,7 +78,7 @@ template<template<class> class ARRAY> 	int GriddingReconGadgetBase<ARRAY>::proce
 				return GADGET_FAIL;
 			}
 			
-			if (buffer->trajectory_ == boost::none) {
+			if (buffer->trajectory_ == Core::none) {
 				GERROR("Trajectories not found. Bailing out.\n");
 				m1->release();
 				return GADGET_FAIL;
@@ -135,10 +135,12 @@ template<template<class> class ARRAY> 	int GriddingReconGadgetBase<ARRAY>::proce
 
 
 			NonCartesian::append_image_header(imarray,recon_bit_->rbit_[e], e);
-			this->send_out_image_array(imarray, e, ((int)e + 1), GADGETRON_IMAGE_REGULAR);
-			
+			this->prepare_image_array(imarray, e, ((int)e + 1), GADGETRON_IMAGE_REGULAR);
 
-			//Is this where we measure SNR?
+                        this->next()->putq(new GadgetContainerMessage<IsmrmrdImageArray>(std::move(imarray)));
+
+
+                    //Is this where we measure SNR?
 			if (replicas.value() > 0 && snr_frame.value() == process_called_times) {
 
 				pseudo_replica(buffer->data_,*traj,*dcw,csm,recon_bit_->rbit_[e],e,CHA);
@@ -281,8 +283,8 @@ template<template<class> class ARRAY> 	void GriddingReconGadgetBase<ARRAY>::pseu
 		imarray.data_ = *real_to_complex< std::complex<float> >(&mean);
 
 		NonCartesian::append_image_header(imarray,recon_bit, encoding);
-		this->send_out_image_array(imarray, encoding, image_series + 100 * ((int)encoding + 3), GADGETRON_IMAGE_SNR_MAP);
-
+		this->prepare_image_array(imarray, encoding, image_series + 100 * ((int)encoding + 3), GADGETRON_IMAGE_SNR_MAP);
+		this->next()->putq(new GadgetContainerMessage<IsmrmrdImageArray>(imarray));
 	}
 
 }

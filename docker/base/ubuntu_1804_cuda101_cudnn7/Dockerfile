@@ -8,7 +8,7 @@ RUN apt-get update --quiet && \
     apt-get install --no-install-recommends --no-install-suggests --yes  \
     software-properties-common apt-utils wget build-essential cython emacs python-dev python-pip python3-dev python3-pip libhdf5-serial-dev cmake git-core libboost-all-dev libfftw3-dev h5utils jq hdf\
 5-tools libatlas-base-dev liblapack-dev libxml2-dev libfreetype6-dev pkg-config libxslt-dev libarmadillo-dev libace-dev gcc-multilib libgtest-dev python3-dev liblapack-dev liblapacke-dev libplplot-dev libdcmtk-dev sup\
-ervisor cmake-curses-gui neofetch supervisor net-tools cpio gpg-agent
+ervisor cmake-curses-gui neofetch supervisor net-tools cpio gpg-agent libpugixml-dev
 
 RUN apt-get install --no-install-recommends --no-install-suggests --yes libopenblas-base libopenblas-dev
 
@@ -18,18 +18,15 @@ RUN apt-get update && apt-get install -y libgtk2.0-dev
 RUN pip3 install --upgrade pip
 RUN pip3 install -U pip setuptools
 
-# tensorflow does not work with cuda92
 RUN pip3 install --upgrade tensorflow 
-# use pytorch 1.0
-RUN pip3 install https://download.pytorch.org/whl/cu100/torch-1.1.0-cp36-cp36m-linux_x86_64.whl
-RUN pip3 install torchvision
+RUN pip3 install torch===1.4.0 torchvision===0.5.0 -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip3 install tensorboardx visdom tqdm
 
 RUN apt-get install --no-install-recommends --no-install-suggests --yes python3-psutil python3-pyxb python3-lxml
 RUN apt-get install --no-install-recommends --no-install-suggests --yes python3-pil
 RUN apt-get install --no-install-recommends --no-install-suggests --yes python3-scipy
 RUN apt-get install --no-install-recommends --no-install-suggests --yes python3-configargparse
-RUN pip3 install numpy==1.15.4 Cython tk-tools matplotlib==2.2.3 scikit-image opencv_python pydicom scikit-learn
+RUN pip3 install numpy Cython tk-tools matplotlib scikit-image opencv_python pydicom scikit-learn
 RUN DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --no-install-suggests --yes python3-tk
 RUN pip3 uninstall -y h5py
 RUN apt-get install -y python3-h5py
@@ -60,9 +57,6 @@ RUN cd /opt && \
 RUN cd /opt/code && \
     git clone ${BART_URL} --branch ${BART_BRANCH} --single-branch && \
     cd bart && \
-    mkdir build && \
-    cd build && \
-    cmake .. -DBART_FPIC=ON -DBART_ENABLE_MEM_CFL=ON -DBART_REDEFINE_PRINTF_FOR_TRACE=ON -DBART_LOG_BACKEND=ON -DBART_LOG_GADGETRON_BACKEND=ON && \
     make -j $(nproc) && \
     make install
 

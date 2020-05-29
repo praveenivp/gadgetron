@@ -1,9 +1,7 @@
 build_task:
   container:
     matrix:
-      image: gadgetron/ubuntu_1604_cuda92_cudnn7_base
-      image: gadgetron/ubuntu_1604_cuda90_cudnn7_base
-      image: gadgetron/ubuntu_1804_cuda92_cudnn7_base
+      image: gradientsoftware/ubuntu_1804_integration
     cpu: 8
     memory: 24
 
@@ -14,8 +12,6 @@ build_task:
     - gem install mtime_cache
 
 
-  mdkir_script:
-    - mkdir /opt/code
   ismrmrd_cache:
     folder: /opt/code/ismrmrd
     populate_script:
@@ -62,18 +58,17 @@ build_task:
   make_build_cache:
     folder: build
     fingerprint_script:
-      - git branch | grep \* | cut -d ' ' -f2
+      - echo "ninja $(git branch | grep \* | cut -d ' ' -f2)"
     populate_script:
     - mkdir build
 
   make_script:
     - cd build
-    - cmake .. -DBUILD_WITH_PYTHON3=ON
+    - cmake .. -G Ninja
     - mtime_cache ../**/*.{%{cpp}} -c .mtime_cache/cache.json
-    - make -j8
-    - make install
+    - ninja
+    - ninja install
     - cd /usr/local/share/gadgetron/config
-    - cp gadgetron.xml.example gadgetron.xml
 
 
 
