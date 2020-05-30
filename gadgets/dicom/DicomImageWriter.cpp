@@ -68,7 +68,15 @@ namespace Gadgetron {
                 std::string attribContent = str.str();
                 Core::IO::write_string_to_stream(stream, attribContent);
             }
+              else //piv edit
+            {
+                unsigned long long meta_len = 0;
+                Core::IO::write(stream, meta_len);
+
+            }
+            
         }
+        
     }
     GADGETRON_WRITER_EXPORT(DicomImageWriter)
 } /* namespace Gadgetron */
