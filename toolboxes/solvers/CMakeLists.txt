@@ -24,10 +24,14 @@ install(FILES
 add_library(gadgetron_toolbox_solvers INTERFACE)
 target_include_directories(gadgetron_toolbox_solvers
         INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR})
+        $<INSTALL_INTERFACE:include/gadgetron>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+install(TARGETS gadgetron_toolbox_solvers EXPORT gadgetron-export)
 
 add_subdirectory(cpu)
 
 if( CUDA_FOUND)
   add_subdirectory(gpu)
 endif ()
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

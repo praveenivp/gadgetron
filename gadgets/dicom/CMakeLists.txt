@@ -78,9 +78,9 @@ target_link_libraries(gadgetron_dicom
     gadgetron_core
     gadgetron_mricore
     gadgetron_toolbox_log
-    gadgetron_toolbox_cpucore 
-    ${ISMRMRD_LIBRARIES}
-    ${Boost_LIBRARIES}
+    gadgetron_toolbox_cpucore
+    boost
+    ISMRMRD::ISMRMRD
     ${GT_DICOM_LIBRARIES} )
 
 if(ARMADILLO_FOUND)
@@ -99,3 +99,5 @@ install(TARGETS gadgetron_dicom
 )
 
 install(FILES ${gadgetron_dicom_config_files}  DESTINATION ${GADGETRON_INSTALL_CONFIG_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

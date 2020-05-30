@@ -9,6 +9,8 @@ add_executable(gadgetron
         Connection.h
         paths.cpp
         paths.h
+        initialization.cpp
+        initialization.h
         system_info.cpp
         connection/Config.cpp
         connection/Config.h
@@ -66,9 +68,8 @@ add_executable(gadgetron
 target_link_libraries(gadgetron
         gadgetron_core
         gadgetron_toolbox_log
-        ${PUGIXML_LIBRARIES}
         boost
-        ${ISMRMRD_LIBRARIES})
+        BLAS)
 
 target_include_directories(gadgetron
         PRIVATE

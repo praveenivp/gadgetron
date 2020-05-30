@@ -6,11 +6,9 @@
 #include <memory>
 #include <string>
 
-#include <boost/parameter/name.hpp>
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 #include <boost/range/algorithm/find_if.hpp>
-#include <numeric>
 
 #include "log.h"
 
@@ -24,7 +22,7 @@ namespace Gadgetron::Server::Connection {
     struct Config::External::Configuration {
         pugi::xml_document document;
 
-        Configuration(const pugi::xml_node &configuration_node) : document() {
+        explicit Configuration(const pugi::xml_node &configuration_node) : document() {
             document.append_copy(configuration_node);
         }
     };
@@ -108,7 +106,7 @@ namespace {
         static pugi::xml_node add_node(const ConfigNode &configNode, pugi::xml_node &node) {
             auto gadget_node = add_basenode(configNode, node);
             add_name(configNode, gadget_node);
-            for (auto property : configNode.properties) add_property(property, gadget_node);
+            for (auto &property : configNode.properties) add_property(property, gadget_node);
             return gadget_node;
         }
 
@@ -163,8 +161,8 @@ namespace {
         static pugi::xml_node add_node(const Config::Stream &stream, pugi::xml_node &node) {
             auto stream_node = node.append_child("stream");
             stream_node.append_attribute("key").set_value(stream.key.c_str());
-            for (auto node : stream.nodes) {
-                visit([&stream_node](auto &typed_node) { add_node(typed_node, stream_node); }, node);
+            for (auto n : stream.nodes) {
+                visit([&stream_node](auto &typed_node) { add_node(typed_node, stream_node); }, n);
             }
             return stream_node;
         }
@@ -236,7 +234,7 @@ namespace {
 
     bool is_reference(const std::string &value) {
         return value.find('@') != std::string::npos;
-    };
+    }
 
 
     template<class Source>
@@ -252,8 +250,8 @@ namespace {
         auto to_bool = [](auto &potential) { return bool(potential); };
 
         auto n_valid = boost::count_if(potentials, to_bool);
-        if (n_valid < 1) { throw ConfigNodeError("Unable to parse property", node); };
-        if (n_valid > 1) { throw ConfigNodeError("Ambigous property parse", node); };
+        if (n_valid < 1) { throw ConfigNodeError("Unable to parse property", node); }
+        if (n_valid > 1) { throw ConfigNodeError("Ambigous property parse", node); }
         return **boost::find_if(potentials, to_bool);
     }
 
@@ -377,13 +375,13 @@ namespace {
     }
 
     Config::Node transform_legacy_python_gadget(Config::Gadget gadget) {
-        GDEBUG_STREAM("Legacy Python Gadget detected: " << gadget.name);
+        GDEBUG_STREAM("Legacy Python Gadget detected: " << gadget.name)
 
         pugi::xml_document document;
         auto configuration = document.append_child("configuration");
 
         for (auto &property : gadget.properties) {
-            GDEBUG_STREAM("Appending property to configuration: " << property.first << ": " << property.second);
+            GDEBUG_STREAM("Appending property to configuration: " << property.first << ": " << property.second)
             XMLSerializer::add_property(property, configuration);
         }
 
@@ -397,15 +395,6 @@ namespace {
             std::vector<Config::Reader>(),
             std::vector<Config::Writer>()
         };
-    }
-
-    bool is_legacy_matlab_gadget(const Config::Gadget &gadget) {
-        return gadget.dll == "gadgetron_matlab" && gadget.classname == "MatlabBufferGadget";
-    }
-
-    Config::Node transform_legacy_matlab_gadget(Config::Gadget gadget) {
-        GDEBUG_STREAM("Legacy Matlab Gadget detected: " << gadget.name);
-        throw std::runtime_error("Currently not implemented.");
     }
 
     class Legacy : public Parser<LegacySource> {
@@ -433,7 +422,6 @@ namespace {
         const std::list<std::pair<std::function<bool(const Config::Gadget &)>,
                                   std::function<Config::Node(Config::Gadget)>>> node_transformations{
             std::make_pair(is_legacy_python_gadget, transform_legacy_python_gadget),
-            std::make_pair(is_legacy_matlab_gadget, transform_legacy_matlab_gadget),
             std::make_pair([](auto _) { return true; }, [=](auto c) { return Config::Node(c); })
         };
 
@@ -489,7 +477,7 @@ namespace {
 
     private:
 
-        V2(const pugi::xml_document &doc) : Parser<V2Source, LegacySource>(doc) {
+        explicit V2(const pugi::xml_document &doc) : Parser<V2Source, LegacySource>(doc) {
             node_parsers["gadget"] = [&](const pugi::xml_node &n) { return this->parse_node<Config::Gadget>(n); };
             node_parsers["parallel"] = [&](const pugi::xml_node &n) { return this->parse_parallel(n); };
             node_parsers["external"] = [&](const pugi::xml_node &n) { return this->parse_external(n); };
@@ -572,8 +560,13 @@ namespace {
             };
         }
 
+        static std::string address_or_localhost(const std::string &s) {
+            return s.empty() ? "localhost" : s;
+        }
+
         static Config::Connect parse_connect(const pugi::xml_node &connect_node) {
             return Config::Connect {
+                address_or_localhost(connect_node.attribute("address").value()),
                 connect_node.attribute("port").value()
             };
         }
@@ -603,12 +596,12 @@ namespace {
 
 namespace Gadgetron::Server::Connection {
 
-    static const std::list<std::pair<std::function<bool(const pugi::xml_document &)>, std::function<Config(const pugi::xml_document &)>>> parsers{
-        std::make_pair(Legacy::accepts, Legacy::parse),
-        std::make_pair(V2::accepts, V2::parse)
-    };
-
     Config parse_config(std::istream &stream) {
+
+        auto parsers = {
+                std::make_pair(Legacy::accepts, Legacy::parse),
+                std::make_pair(V2::accepts, V2::parse)
+        };
 
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load(stream);
@@ -627,7 +620,6 @@ namespace Gadgetron::Server::Connection {
         pugi::xml_document doc{};
         auto config_node = doc.append_child("configuration");
         config_node.append_child("version").text().set(2);
-
         XMLSerializer::add_readers(config.readers, config_node);
         XMLSerializer::add_writers(config.writers, config_node);
         XMLSerializer::add_node(config.stream, config_node);

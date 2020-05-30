@@ -22,7 +22,7 @@ namespace {
     using namespace Gadgetron::Server::Connection;
     using namespace Gadgetron::Server::Connection::Handlers;
 
-    using Header = Gadgetron::Core::Context::Header;
+    using Header = Gadgetron::Core::StreamContext::Header;
 
     class HeaderHandler : public Handler {
     public:
@@ -45,8 +45,8 @@ namespace {
 
     class HeaderContext {
     public:
-        boost::optional<Header> header;
-        const Context::Paths paths;
+        Gadgetron::Core::optional<Header> header;
+        const StreamContext::Paths paths;
     };
 
     std::map<uint16_t, std::unique_ptr<Handler>> prepare_handlers(
@@ -74,15 +74,15 @@ namespace Gadgetron::Server::Connection::HeaderConnection {
 
     void process(
             std::iostream &stream,
-            const Core::Context::Paths &paths,
-            const Core::Context::Args &args,
+            const Core::StreamContext::Paths &paths,
+            const Core::StreamContext::Args &args,
             const Config &config,
             ErrorHandler &error_handler
     ) {
         GINFO_STREAM("Connection state: [HEADER]");
 
         HeaderContext context{
-                boost::none,
+                Core::none,
                 paths
         };
 
@@ -106,7 +106,7 @@ namespace Gadgetron::Server::Connection::HeaderConnection {
         output_thread.join();
 
         if (context.header) {
-            StreamConnection::process(stream, Context{context.header.get(), paths, args}, config, error_handler);
+            StreamConnection::process(stream, StreamContext{context.header.value(), paths, args}, config, error_handler);
         }
         else {
             VoidConnection::process(stream, paths, config, error_handler);

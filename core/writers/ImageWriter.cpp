@@ -12,8 +12,9 @@ namespace {
     using namespace Gadgetron;
     using namespace Gadgetron::Core;
 
-    template<class T> inline constexpr uint16_t ismrmrd_data_type(){ return 0;}
+    template<class T> inline constexpr uint16_t ismrmrd_data_type(){ return T::this_function_is_not_defined; }
     template<> inline constexpr uint16_t ismrmrd_data_type<unsigned short>(){return ISMRMRD::ISMRMRD_USHORT;}
+    template<> inline constexpr uint16_t ismrmrd_data_type<short>(){return ISMRMRD::ISMRMRD_SHORT;}
     template<> inline constexpr uint16_t ismrmrd_data_type<unsigned int>(){return ISMRMRD::ISMRMRD_UINT;}
     template<> inline constexpr uint16_t ismrmrd_data_type<int>(){return ISMRMRD::ISMRMRD_INT;}
     template<> inline constexpr uint16_t ismrmrd_data_type<float>(){return ISMRMRD::ISMRMRD_FLOAT;}
@@ -25,7 +26,7 @@ namespace {
 
 
     template<class T>
-    class TypedImageWriter : public TypedWriter<ISMRMRD::ImageHeader, hoNDArray<T>, boost::optional<ISMRMRD::MetaContainer>> {
+    class TypedImageWriter : public TypedWriter<ISMRMRD::ImageHeader, hoNDArray<T>, Core::optional<ISMRMRD::MetaContainer>> {
     public:
         void serialize(
                 std::ostream &stream,
@@ -34,12 +35,14 @@ namespace {
                 const optional<ISMRMRD::MetaContainer>& meta
         ) override {
             std::string serialized_meta;
+            uint64_t meta_size = 0;
+
             if(meta) {
                 std::stringstream meta_stream;
                 ISMRMRD::serialize(*meta, meta_stream);
                 serialized_meta = meta_stream.str();
+                meta_size = serialized_meta.size() + 1;
             }
-            uint64_t meta_size = serialized_meta.size();
 
             auto corrected_header = header;
             corrected_header.data_type = ismrmrd_data_type<T>();

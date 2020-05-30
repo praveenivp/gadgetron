@@ -20,12 +20,14 @@ target_link_libraries(gadgetron_toolbox_cpuklt
 target_include_directories(
         gadgetron_toolbox_cpuklt
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        $<INSTALL_INTERFACE:include/gadgetron>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 
 )
 
 install(TARGETS gadgetron_toolbox_cpuklt
-	LIBRARY DESTINATION lib
+	EXPORT gadgetron-export
+		LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	RUNTIME DESTINATION bin
 	COMPONENT main
@@ -36,3 +38,5 @@ install(FILES
   cpuklt_export.h 
   hoNDKLT.h
   DESTINATION ${GADGETRON_INSTALL_INCLUDE_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

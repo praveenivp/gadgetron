@@ -8,42 +8,39 @@ add_subdirectory(parallel)
 add_subdirectory(distributed)
 
 add_library(gadgetron_core SHARED
-        Types.h
-        variant.hpp
-        Channel.h
-        Channel.hpp
         Channel.cpp
-        Gadget.h
         Gadget.cpp
-        Reader.h
-        Writer.h
         LegacyACE.cpp
         Message.cpp
-        Writer.hpp
-        Response.h
         Response.cpp
-        PureGadget.h
-        io/primitives.h Types.hpp MessageID.h MPMCChannel.h io/from_string.h io/from_string.cpp io/ismrmrd_types.h io/adapt_struct.h TypeTraits.h ChannelAlgorithms.h io/iostream_operators.h io/from_string.hpp)
+        io/from_string.cpp)
+set_target_properties(gadgetron_core PROPERTIES
+        VERSION ${GADGETRON_VERSION_STRING}
+        SOVERSION ${GADGETRON_SOVERSION})
 
 target_link_libraries(gadgetron_core
+        ISMRMRD::ISMRMRD
         gadgetron_toolbox_cpucore
         boost)
 
 target_include_directories(gadgetron_core PUBLIC
-        .
-        ${ISMRMRD_INCLUDE_DIR})
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include/gadgetron>
+        )
 
-install(TARGETS gadgetron_core 
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-   RUNTIME DESTINATION bin
-   COMPONENT main
-)
+install(TARGETS gadgetron_core
+        EXPORT gadgetron-export
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        COMPONENT main
+        )
 
 
 install(FILES
         Channel.h
         Channel.hpp
+        ChannelIterator.h
         Message.h
         Message.hpp
         MPMCChannel.h
@@ -60,6 +57,8 @@ install(FILES
         PropertyMixin.h
         GadgetContainerMessage.h
         ChannelAlgorithms.h
+        variant.hpp
+        MessageID.h
         DESTINATION ${GADGETRON_INSTALL_INCLUDE_PATH} COMPONENT main)
 
 install(FILES
@@ -74,3 +73,5 @@ install(FILES
         config/distributed_generic_default.xml
         config/distributed_image_default.xml
         DESTINATION ${GADGETRON_INSTALL_CONFIG_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

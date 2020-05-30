@@ -7,7 +7,7 @@ if(WIN32)
 endif()
 
 
-cuda_add_library(gadgetron_toolbox_gpucore SHARED 
+cuda_add_library(gadgetron_toolbox_gpucore SHARED
     check_CUDA.h
     CUBLASContextProvider.h
     cudaDeviceManager.h
@@ -57,7 +57,6 @@ target_link_libraries(gadgetron_toolbox_gpucore
 target_include_directories(
   gadgetron_toolbox_gpucore
   PUBLIC
-  ${CUDA_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -89,3 +88,5 @@ install(FILES
   cuSparseMatrix.h
   cuNDArray_converter.h
   DESTINATION ${GADGETRON_INSTALL_INCLUDE_PATH} COMPONENT main)
+
+  set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

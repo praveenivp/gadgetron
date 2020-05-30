@@ -13,6 +13,7 @@
 #include "io/primitives.h"
 #include "Context.h"
 #include "MessageID.h"
+#include "Types.h"
 
 namespace {
 
@@ -21,7 +22,7 @@ namespace {
     using namespace Gadgetron::Server::Connection;
     using namespace Gadgetron::Server::Connection::Handlers;
 
-    using Header = Gadgetron::Core::Context::Header;
+    using Header = Gadgetron::Core::StreamContext::Header;
 
     std::string read_filename_from_stream(std::istream &stream) {
         auto buffer = read<std::array<char,1024>>(stream);
@@ -45,7 +46,7 @@ namespace {
     public:
         ConfigReferenceHandler(
                 std::function<void(Config)> &&callback,
-                const Context::Paths &paths
+                const StreamContext::Paths &paths
         ) : ConfigHandler(callback), paths(paths) {}
 
         void handle(std::istream &stream, Gadgetron::Core::OutputChannel&) override {
@@ -58,7 +59,7 @@ namespace {
         }
 
     private:
-        const Context::Paths &paths;
+        const StreamContext::Paths &paths;
     };
 
     class ConfigStringHandler : public ConfigHandler {
@@ -72,15 +73,15 @@ namespace {
         }
     };
 
-    class ConfigContext {
+    class ConfigStreamContext {
     public:
-        boost::optional<Config> config;
-        const Context::Paths paths;
+        Gadgetron::Core::optional<Config> config;
+        const StreamContext::Paths paths;
     };
 
     std::map<uint16_t, std::unique_ptr<Handler>> prepare_handlers(
             std::function<void()> close,
-            ConfigContext &context
+            ConfigStreamContext &context
     ) {
         std::map<uint16_t, std::unique_ptr<Handler>> handlers{};
 
@@ -104,15 +105,15 @@ namespace Gadgetron::Server::Connection::ConfigConnection {
 
     void process(
             std::iostream &stream,
-            const Core::Context::Paths &paths,
-            const Core::Context::Args &args,
+            const Core::StreamContext::Paths &paths,
+            const Core::StreamContext::Args &args,
             ErrorHandler &error_handler
     ) {
 
         GINFO_STREAM("Connection state: [CONFIG]");
 
-        ConfigContext context{
-            boost::none,
+        ConfigStreamContext context{
+            Core::none,
             paths
         };
 
@@ -136,7 +137,7 @@ namespace Gadgetron::Server::Connection::ConfigConnection {
         output_thread.join();
 
         if (context.config) {
-            HeaderConnection::process(stream, paths, args, context.config.get(), error_handler);
+            HeaderConnection::process(stream, paths, args, context.config.value(), error_handler);
         }
     }
 }

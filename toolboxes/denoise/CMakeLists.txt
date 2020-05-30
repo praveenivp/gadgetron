@@ -14,14 +14,14 @@ target_link_libraries(gadgetron_toolbox_denoise
         gadgetron_toolbox_cpucore
         gadgetron_toolbox_cpucore_math
         armadillo
-        ${Boost_LIBRARIES}
         )
 target_include_directories(gadgetron_toolbox_denoise
         PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         )
 
 install(TARGETS gadgetron_toolbox_denoise
+		EXPORT gadgetron-export
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 	RUNTIME DESTINATION bin
@@ -34,3 +34,5 @@ install(FILES
         non_local_means.h
         non_local_bayes.h
         DESTINATION ${GADGETRON_INSTALL_INCLUDE_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

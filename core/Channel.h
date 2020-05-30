@@ -9,6 +9,8 @@
 #include "Message.h"
 #include "Types.h"
 
+#include "ChannelIterator.h"
+
 namespace Gadgetron { namespace Core {
     class GenericInputChannel;
 
@@ -34,6 +36,8 @@ namespace Gadgetron { namespace Core {
         class Closer;
     };
 
+    class MessageChannel;
+    template <class ChannelType=MessageChannel, class... ARGS> ChannelPair make_channel(ARGS&&... args);
     /**
      * The end of a channel which provides output. Only constructible through make_channel(args)
      */
@@ -48,6 +52,8 @@ namespace Gadgetron { namespace Core {
         /// Pushes a message to the channel
         void push_message(Message);
 
+        ChannelIterator<OutputChannel> begin();
+
     private:
         OutputChannel(const OutputChannel&) = default;
 
@@ -61,6 +67,7 @@ namespace Gadgetron { namespace Core {
         std::shared_ptr<Channel::Closer> closer;
     };
 } }
+
 #include "Channel.hpp"
 
 namespace Gadgetron { namespace Core {
@@ -97,13 +104,22 @@ namespace Gadgetron { namespace Core {
 
     template <class CHANNEL> class ChannelIterator;
 
-    ChannelIterator<GenericInputChannel> begin(GenericInputChannel&);
-
-    ChannelIterator<GenericInputChannel> end(GenericInputChannel&);
-
     struct ChannelPair {
         GenericInputChannel input;
         OutputChannel output;
+    };
+    class MessageChannel : public Channel {
+
+    protected:
+        Message pop() override;
+
+        optional<Message> try_pop() override;
+
+        void close() override;
+
+        void push_message(Message) override;
+
+        MPMCChannel<Message> channel;
     };
 
     /***
@@ -120,22 +136,8 @@ namespace Gadgetron { namespace Core {
 
     ChannelIterator<OutputChannel> begin(OutputChannel&);
 
-    class MessageChannel : public Channel {
-
-    protected:
-        Message pop() override;
-
-        optional<Message> try_pop() override;
-
-        void close() override;
-
-        void push_message(Message) override;
-
-		MPMCChannel<Message> channel;
-    };
-
     /***
-     * A wrapper around an InputChannel. Filters the content of an Inputchannel based on the specified typelist
+     * A wrapper around a GenericInputChannel. Filters the content of an Inputchannel based on the specified typelist
      * @tparam ARGS
      */
     template <class... TYPELIST> class InputChannel : public ChannelRange<InputChannel<TYPELIST...>> {
@@ -173,4 +175,4 @@ namespace Gadgetron { namespace Core {
         OutputChannel& bypass;
     };
 
-} }
+}}

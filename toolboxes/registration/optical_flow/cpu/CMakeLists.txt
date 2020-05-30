@@ -78,14 +78,16 @@
                 )
         target_include_directories(gadgetron_toolbox_cpureg
                 PUBLIC
-                ${CMAKE_CURRENT_SOURCE_DIR}
-                ${CMAKE_CURRENT_SOURCE_DIR}/transformation
-                ${CMAKE_CURRENT_SOURCE_DIR}/..
-                ${CMAKE_CURRENT_SOURCE_DIR}/application
-                ${CMAKE_CURRENT_SOURCE_DIR}/dissimilarity
-                ${CMAKE_CURRENT_SOURCE_DIR}/register
-                ${CMAKE_CURRENT_SOURCE_DIR}/solver
-                ${CMAKE_CURRENT_SOURCE_DIR}/warper
+
+                $<INSTALL_INTERFACE:include/gadgetron>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/transformation>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/application>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/dissimilarity>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/register>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/solver>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/warper>
                 )
 
     else ()
@@ -107,6 +109,7 @@
     if (BUILD_CPU_OPTIMAL_FLOW_REG)
         
 		install(TARGETS gadgetron_toolbox_cpureg
+            EXPORT gadgetron-export
 			LIBRARY DESTINATION lib
 			ARCHIVE DESTINATION lib
 			RUNTIME DESTINATION bin
@@ -123,3 +126,5 @@
             ${register_files}
             ${application_files}
             DESTINATION ${GADGETRON_INSTALL_INCLUDE_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

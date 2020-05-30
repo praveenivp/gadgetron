@@ -25,7 +25,6 @@ target_link_libraries(
   gadgetron_toolbox_cpucore_math
   gadgetron_toolbox_log
   gadgetron_toolbox_epi
-  ${ISMRMRD_LIBRARIES}
 )
 
 
@@ -48,3 +47,5 @@ install(FILES
   epi.xml
   epi_gtplus_grappa.xml
   DESTINATION ${GADGETRON_INSTALL_CONFIG_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)

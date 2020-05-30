@@ -18,7 +18,6 @@ target_link_libraries(
   gadgetron_toolbox_cpucore_math
   gadgetron_toolbox_log
   gadgetron_toolbox_fatwater
-  ${ISMRMRD_LIBRARIES}
 )
 
 install(FILES 
@@ -37,3 +36,5 @@ install(FILES
 install(FILES
         config/Generic_Cartesian_Grappa_FatWater.xml
   DESTINATION ${GADGETRON_INSTALL_CONFIG_PATH} COMPONENT main)
+
+set(GADGETRON_BUILD_RPATH "${CMAKE_CURRENT_BINARY_DIR};${GADGETRON_BUILD_RPATH}" PARENT_SCOPE)
