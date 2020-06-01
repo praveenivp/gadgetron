@@ -1,30 +1,16 @@
-#include<PESpiralDesign.h>
+#include "PESpiralDesign.h"
 
-namespace Gadgetron{
+namespace Gadgetron
+{
+namespace Spiral
+{
 
-namespace Spiral{
-class PESpiralDesign {
-protected:
-	std::vector<float> m_vfGx, m_vfGy, m_vfGz;
-	double m_dAx, m_dAy, m_dAz, m_dAmp, m_dMomX, m_dMomY, m_dMomZ, m_dPreMomX, m_dPreMomY, m_dPreMomZ, m_dPostMomX, m_dPostMomY, m_dPostMomZ;
-	double m_dGradRasterTime;
-	double m_dLarmorConst;
-	eSpiralType m_eSpiralType;
-
-	double m_dResolution, m_dMaxAmplitude, m_dMinRiseTime;
-	int m_Nitlv;
-	std::vector<double> m_fov, m_radius;
-	
-
-
-public:
-
-	//constructer with ismrmrd header
-	PESpiralDesign(const ISMRMRD::AcquisitionHeader &acq_header)
-	{
+	// //constructer with ismrmrd header
+	// PESpiralDesign(const ISMRMRD::AcquisitionHeader &acq_header)
+	// {
 		
-	}
-	PESpiralDesign(void) // Constructor
+	// }
+	PESpiralDesign::PESpiralDesign(void) // Constructor
 	{
 		this->m_eSpiralType = SpiralOut;
 		this->m_Nitlv = 8;
@@ -33,11 +19,11 @@ public:
 	}
 
 
-	~PESpiralDesign(void) // Destructor
+	PESpiralDesign::~PESpiralDesign(void) // Destructor
 	{}
 
-public:
-	void setparameters(int Nitlv, double res, double* fov_, int nfov, double* radius_, int nradius, double Gmax, double Smax, eSpiralType spiralType, double T)
+
+	void PESpiralDesign::setparameters(int Nitlv, double res, double* fov_, int nfov, double* radius_, int nradius, double Gmax, double Smax, eSpiralType spiralType, double T)
 	{
 		m_Nitlv = Nitlv;
 		m_dResolution = res;
@@ -56,7 +42,7 @@ public:
 
 	}
 
-	void PrintOtherparameters()
+	void PESpiralDesign::PrintOtherparameters()
 	{
 		std::cout << this->m_dAx << std::endl;
 		std::cout << this->m_dMomX << std::endl;
@@ -72,15 +58,15 @@ public:
 
 	}
 
-	std::vector<float> getGx()
+	std::vector<float> PESpiralDesign::getGx()
 	{
 		return m_vfGx;
 	}
-	std::vector<float> getGy()
+	std::vector<float> PESpiralDesign::getGy()
 	{
 		return m_vfGy;
 	}
-	void printGX()
+	void PESpiralDesign::printGX()
 	{
 		
 		for (int i=0;i<this->m_vfGx.size();i++)
@@ -95,13 +81,13 @@ public:
 		
 	}
 
-	void printGY()
+	void PESpiralDesign::printGY()
 	{
 		for (int i = 0; i < this->m_vfGy.size(); i++)
 			std::cout << m_vfGy[i] << "  ";
 	}
 	
-	bool vdSpiralDesign(int Nitlv, double res, double* fov_, int nfov, double* radius_, int nradius, double Gmax, double Smax, eSpiralType spiralType, double T) {
+	bool PESpiralDesign::vdSpiralDesign(int Nitlv, double res, double* fov_, int nfov, double* radius_, int nradius, double Gmax, double Smax, eSpiralType spiralType, double T) {
 
 		long k; // loop index
 
@@ -278,7 +264,7 @@ public:
 	}
 
 
-	bool setSpiralType(eSpiralType spiralType) {
+	bool PESpiralDesign::setSpiralType(eSpiralType spiralType) {
 		bool bStatus = true;
 		if (spiralType != m_eSpiralType) {
 			if ((m_eSpiralType != DoubleSpiral) && (spiralType != DoubleSpiral)) {
@@ -302,10 +288,198 @@ public:
 		}
 		return true;
 	}
-};
 
 
+bool PESpiralDesign::calcTrajectory(std::vector<float> &vfKx, std::vector<float> &vfKy, std::vector<float> &vfDcf, long lADCSamples, int gridsize, double dADCshift, double dGradDelay) {
+    //only spiral out supported for now!
+    
+    if (m_vfGx.size()==0 || m_vfGx.size()!=m_vfGy.size())
+        return false;
+    
+    long lGradSamples = m_vfGx.size();
+    long k,l;
+    
+    double dwelltime = (lGradSamples*m_dGradRasterTime + dADCshift)/lADCSamples;
+    // iflag used in spline method to signal error 
+    int *iflag;
+    int iflagp;
+    iflag = &iflagp;
+    int *last;
+    int lastp = 0;
+    last = &lastp;
+    
+    // kgradx,kgrady: k-space trajectory on gradient raster
+    int nFillpre  = 2;
+    int nFillpost = 2;
+    if (m_eSpiralType == SpiralOut)
+        nFillpre  += int(dADCshift/m_dGradRasterTime);
+    else
+        nFillpost += int(dADCshift/m_dGradRasterTime);
+    
+    long lFilledSamples = lGradSamples+nFillpre+nFillpost;
+    double *kgradx  = new double[lFilledSamples];
+    double *kgrady  = new double[lFilledSamples];
+    for (k=0;k<nFillpre+1;++k) {
+        kgradx[k] = 0.;
+        kgrady[k] = 0.;
+    }
+    double cumsumx=0.,cumsumy=0.;
+    for (k=1;k<lGradSamples;++k) {
+        cumsumx += m_dAx * (m_vfGx[k]+m_vfGx[k-1])/2.;
+        kgradx[k+nFillpre]  = cumsumx * m_dGradRasterTime * m_dLarmorConst/1e5;
+        cumsumy += m_dAy * (m_vfGy[k]+m_vfGy[k-1])/2.;
+        kgrady[k+nFillpre]  = cumsumy * m_dGradRasterTime * m_dLarmorConst/1e5;
+    }
+    for (k=0;k<nFillpost;++k) {
+        cumsumx += m_dAx * m_vfGx[lGradSamples-1]/2.;
+        cumsumy += m_dAy * m_vfGy[lGradSamples-1]/2.;
+        kgradx[k+nFillpre+lGradSamples] = cumsumx * m_dGradRasterTime * m_dLarmorConst/1e5;
+        kgrady[k+nFillpre+lGradSamples] = cumsumy * m_dGradRasterTime * m_dLarmorConst/1e5;
+    }
+    
+    double *coeff1x = new double[lFilledSamples];
+    double *coeff2x = new double[lFilledSamples];
+    double *coeff3x = new double[lFilledSamples];
+    double *coeff1y = new double[lFilledSamples];
+    double *coeff2y = new double[lFilledSamples];
+    double *coeff3y = new double[lFilledSamples];
+    double *t_grad  = new double[lFilledSamples];
+    // Initalize gradient raster time
+    for (k=0;k<lFilledSamples;++k)
+        t_grad[k] = (k-nFillpre+1)*m_dGradRasterTime;
+    
+    spline(lFilledSamples, 0, 0, 0, 0, t_grad, kgradx, coeff1x, coeff2x, coeff3x, iflag);
+    spline(lFilledSamples, 0, 0, 0, 0, t_grad, kgrady, coeff1y, coeff2y, coeff3y, iflag);
 
+    // --------------------------------------------------------------
+    // Interpolated curve
+    // --------------------------------------------------------------
+    vfKx.resize(lADCSamples*m_Nitlv,0.);
+    vfKy.resize(lADCSamples*m_Nitlv,0.);
+    for (k=0; k<lADCSamples; k++) {
+        // Time for ACD sampling point
+        double t_relativeToGrad = (k+0.5)*dwelltime + dGradDelay;
+        if (m_eSpiralType == SpiralOut)
+            t_relativeToGrad -= dADCshift;
+        else
+            t_relativeToGrad += dADCshift;
+        vfKx[k] = (float) seval(lFilledSamples, t_relativeToGrad, t_grad, kgradx, coeff1x, coeff2x, coeff3x, last);
+        vfKy[k] = (float) seval(lFilledSamples, t_relativeToGrad, t_grad, kgrady, coeff1y, coeff2y, coeff3y, last);
+    }
+    delete[] kgradx;
+    delete[] kgrady;
+    delete[] t_grad;
+    delete[] coeff1x;
+    delete[] coeff2x;
+    delete[] coeff3x;
+    delete[] coeff1y;
+    delete[] coeff2y;
+    delete[] coeff3y;
+    
+    if (m_eSpiralType == SpiralIn) {
+        //for spiral in: make sure that trajectory ends in the center of k-space
+        for (k=0; k<lADCSamples; k++) {
+            vfKx[k] -= vfKx[lADCSamples-1];
+            vfKy[k] -= vfKy[lADCSamples-1];
+        }
+    } else if (m_eSpiralType == DoubleSpiral) {
+        //for double spiral: make sure that middle of trajectory is in the center of k-space
+        float midX = vfKx[lADCSamples/2];
+        float midY = vfKy[lADCSamples/2];
+        for (k=0; k<lADCSamples; k++) {
+            vfKx[k] -= midX;
+            vfKy[k] -= midY;
+        }
+    }
+    
+    //now calculate trajectory for other interleaves by rotation
+    for (k=1;k<m_Nitlv;++k) {
+        float phi = (float) (2.* M_PI * k / m_Nitlv);
+        if (m_eSpiralType == DoubleSpiral) // we only need to distribute the spirals over M_PI 
+            phi /= 2.f;
+        for (l=0; l<lADCSamples; ++l) {
+//             vfKx[l+k*lADCSamples] = (float) (cos(phi) * vfKx[l] + sin(phi) * vfKy[l]);
+//             vfKy[l+k*lADCSamples] = (float) (-sin(phi) * vfKx[l] + cos(phi) * vfKy[l]);
+            vfKx[l+k*lADCSamples] = (float) (cos(phi) * vfKx[l] - sin(phi) * vfKy[l]);
+            vfKy[l+k*lADCSamples] = (float) (sin(phi) * vfKx[l] + cos(phi) * vfKy[l]);
+        }
+    }
+    
+    // Calculate density compensation function
+    vfDcf = jacksonDCF(vfKx, vfKy, gridsize, 1.f);
+    
+    return true;
+}
+
+
+std::vector<float> PESpiralDesign::jacksonDCF(std::vector<float> &vfKx, std::vector<float> &vfKy, int gridsize, float zeta) {
+    
+    int k,l,m;
+    long nsamples = vfKx.size()/m_Nitlv;
+    
+    //scale zeta:
+    //find maxk:
+    float kmax = 0.f;
+    for (k=0;k<nsamples;++k) {
+        float tmp = vfKx[k]*vfKx[k]+vfKy[k]*vfKy[k];
+        if (tmp>kmax)
+            kmax = fabs(vfKx[k]);
+    }
+    kmax  = sqrt(kmax);
+    zeta *= 2.f * kmax * 2.f/gridsize;
+    
+    //cut dcf at 0.85 of kmax
+    for (k=0;k<nsamples;++k) {
+        float tmp = sqrt(vfKx[k]*vfKx[k]+vfKy[k]*vfKy[k]);
+        if (tmp>0.85f*kmax)
+            break;
+    }
+    // wi is cutoff and normalized to average wi between cutoff_ix1 and cutoff_ix2
+    int cutoff_ix1 = k;
+    int cutoff_ix2 = cutoff_ix1 + (nsamples-cutoff_ix1)/4+1; 
+    
+    float zeta_sq = zeta*zeta;
+    std::vector<float> wi(nsamples*m_Nitlv,1.);
+    for (k=0;k<nsamples;++k) {
+        float goal = 0.;
+        float kxk = vfKx[k];
+        float kyk = vfKy[k];
+        // vorsicht: Skript nimmt gleichverteilte Interleaves an (Winkel)
+        for (l=0; l<m_Nitlv;l++) {
+            for (m=0;m<nsamples;++m) {
+                float dx = vfKx[m+l*nsamples] - kxk;
+                dx = dx*dx;
+                if (dx < zeta_sq) {
+                    float dr = vfKy[m+l*nsamples] - kyk;
+                    dr = dx + dr*dr;
+                    if (dr < zeta_sq) {
+                        dr = (float) sqrt(dr);
+                        //simple hann filter
+                        float kern = 0.5f - 0.5f * (float)cos(2.*M_PI*(1.+dr/zeta)/2.);
+                        goal += kern;
+                    }
+                }
+            }
+        }
+        wi[k] = 1.f/goal;
+    }
+    
+    // determine cutoff value for wi
+    float cutoff_val = 0.;
+    for (k=cutoff_ix1;k<cutoff_ix2;++k) 
+        cutoff_val += wi[k];
+    cutoff_val /= MAX(1,cutoff_ix2-cutoff_ix1);
+    // normalize wi by cutoff value
+    for (k=0;k<nsamples;++k)
+        wi[k] = MIN(1.f,wi[k]/cutoff_val);
+            
+    //now copy wi from interleave 0 to other interleaves;
+    for (k=1; k<m_Nitlv;++k) {
+        for (l=0; l<nsamples; ++l)
+            wi[l+k*nsamples] = wi[l];
+    }
+    return wi;
+}
 
 
 }
