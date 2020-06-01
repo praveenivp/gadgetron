@@ -7,6 +7,9 @@
 #include "vds.h"
 #include "armadillo"
 #include <mri_core_girf_correction.h>
+#include "PESpiralDesign.h"
+#include <fstream>
+#include <vector>
 
 namespace Gadgetron {
 namespace Spiral {
@@ -29,6 +32,11 @@ namespace Spiral {
         double krmax_;
         double fov_;
         float TE_;
+        //piv edit
+        long Spiral_type;
+        double Resolution_mm;
+        double ADCShift_us;
+        double GradDelay_us;
 
         hoNDArray<floatd2> correct_gradients(const hoNDArray<floatd2> &gradients, float grad_samp_us,
                                              float girf_samp_us, const float *read_dir, const float *phase_dir,
