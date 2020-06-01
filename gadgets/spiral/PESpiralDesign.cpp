@@ -1,4 +1,4 @@
-#include<PESpiralDesign.h>
+#include "PESpiralDesign.h"
 
 namespace Gadgetron{
 

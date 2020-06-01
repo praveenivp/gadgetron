@@ -328,7 +328,7 @@ option(BUILD_PYTHON_SUPPORT "Build Python gadgets etc" Off)
 
 if (BUILD_PYTHON_SUPPORT)
 
-#option(BUILD_WITH_PYTHON3 "Build with Python 3.x" On)
+option(BUILD_WITH_PYTHON3 "Build with Python 3.x" On)
 find_package(PythonLibs 3  REQUIRED)
 
 find_package(NumPy REQUIRED)
