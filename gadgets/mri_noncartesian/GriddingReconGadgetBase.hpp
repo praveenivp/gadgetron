@@ -40,7 +40,7 @@ template<template<class> class ARRAY> 	int GriddingReconGadgetBase<ARRAY>::proce
 		matsize=matsize+(warp_size - (matsize % warp_size));
 		image_dims_.push_back(matsize); //matrixsize.x
 		image_dims_.push_back(matsize);
-		GDEBUG("GrddingReconmatsize:                   %d\n", matsize);
+		//GDEBUG("GrddingReconmatsize:                   %d\n", matsize);
 		
 		//Figure out what the oversampled matrix size should be taking the warp size into consideration. 
 		
