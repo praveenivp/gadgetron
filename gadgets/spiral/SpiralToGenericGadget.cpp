@@ -67,10 +67,13 @@ namespace Gadgetron {
             GDEBUG("Adjusting samples_to_skip_end_ = %d\n", samples_to_skip_end_);
         }
 
+        //piv edit discard post was 630 for 1512 RO Length.
+        m1->getObjectPtr()->discard_post=0;
+
         // Define some utility variables
         //
-
-        unsigned int samples_to_copy = m1->getObjectPtr()->number_of_samples - samples_to_skip_end_;
+        
+        unsigned int samples_to_copy = m1->getObjectPtr()->number_of_samples;// - samples_to_skip_end_;
         unsigned int interleave = m1->getObjectPtr()->idx.kspace_encode_step_1;
 
         // Prepare for a new array continuation for the trajectory/weights of the incoming profile
@@ -93,7 +96,7 @@ namespace Gadgetron {
             GDEBUG("Failed to put job on queue.\n");
             return GADGET_FAIL;
         }
-
+        //GDEBUG("exiting SpiraltoGeneric Gadget\n");
         return GADGET_OK;
     }
 
@@ -102,6 +105,16 @@ namespace Gadgetron {
         hoNDArray<floatd2> trajectory;
         hoNDArray<float> weights;
         std::tie(trajectory,weights) = trajectory_parameters.calculate_trajectories_and_weight(acq_header);
+
+        //piv edit
+          std::ofstream myfiletraj;
+            myfiletraj.open ("/home/praveen/mytraj.txt");
+            for(Gadgetron::hoNDArray<floatd2>::iterator  it = trajectory.begin();it!=trajectory.end();++it){
+                Gadgetron::floatd2 kxy=*it;
+                myfiletraj << kxy[0]<< ", "<< kxy[1]<<std::endl; //<<ky[i]<<", "<<dcf[i]<< ", ";
+            }
+            myfiletraj<<std::endl;
+            myfiletraj.close();
 
         auto traj_dims = *trajectory.get_dimensions();
         std::vector<size_t> dims = {3};

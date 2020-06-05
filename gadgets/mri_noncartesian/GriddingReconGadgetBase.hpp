@@ -23,6 +23,7 @@ template<template<class> class ARRAY> 	int GriddingReconGadgetBase<ARRAY>::proce
 		ISMRMRD::IsmrmrdHeader h;
 		deserialize(mb->rd_ptr(), h);
 
+		unsigned int warp_size = 32;
 
 		auto matrixsize = h.encoding.front().encodedSpace.matrixSize;
 
@@ -30,12 +31,19 @@ template<template<class> class ARRAY> 	int GriddingReconGadgetBase<ARRAY>::proce
 		kernel_width_ = kernel_width.value();
 		oversampling_factor_ = gridding_oversampling_factor.value();
 
-
-		image_dims_.push_back(matrixsize.x);
-		image_dims_.push_back(matrixsize.y);
+		//piv edit
+		auto traj_desc = *h.encoding[0].trajectoryDescription;
+		int fov_mm=h.encoding.front().reconSpace.fieldOfView_mm.x;
+		auto userparam_double = Gadgetron::to_map(traj_desc.userParameterDouble);
+		int resolution_mm= userparam_double.at("Resolution_mm");
+		int matsize=(int)fov_mm/resolution_mm;
+		matsize=matsize+(warp_size - (matsize % warp_size));
+		image_dims_.push_back(matsize); //matrixsize.x
+		image_dims_.push_back(matsize);
+		GDEBUG("GrddingReconmatsize:                   %d\n", matsize);
 		
 		//Figure out what the oversampled matrix size should be taking the warp size into consideration. 
-		unsigned int warp_size = 32;
+		
 		image_dims_os_ = uint64d2
 			(((static_cast<size_t>(std::ceil(image_dims_[0]*oversampling_factor_))+warp_size-1)/warp_size)*warp_size,
 			 ((static_cast<size_t>(std::ceil(image_dims_[1]*oversampling_factor_))+warp_size-1)/warp_size)*warp_size);

@@ -27,15 +27,16 @@ namespace Gadgetron {
                 auto userparam_long = to_map(traj_desc.userParameterLong);
                 auto userparam_double = to_map(traj_desc.userParameterDouble);
                 //piv edit
-                Spiral_type=userparam_long.at("Spiral_Type");
+                Spiral_type=userparam_long.at("SpiralType");
                 Resolution_mm=userparam_double.at("Resolution_mm");
                 GradDelay_us=userparam_double.at("GradDelay_us");
                 ADCShift_us=userparam_double.at("ADCShift_us");
                 Tsamp_ns_ = userparam_long.at("DwellTime_ns");
                 Nints_ = userparam_long.at("interleaves");
 
+
                 gmax_ = userparam_double.at("MaxGradient_mT_per_m");
-                smax_ = userparam_double.at("MaxSlewRate_mT_m_ms");
+                smax_ = userparam_double.at("Slewmax_mT_m_ms");
                 krmax_ = 1;//luserparam_double.at("krmax_per_cm");
                 fov_ = h.encoding[0].reconSpace.fieldOfView_mm.x; //userparam_double.at("FOVCoeff_1_cm");
             } catch (std::out_of_range exception) {
@@ -80,6 +81,7 @@ namespace Gadgetron {
 
                 std::pair<hoNDArray<floatd2>, hoNDArray<float>>
         TrajectoryParameters::calculate_trajectories_and_weight(const ISMRMRD::AcquisitionHeader &acq_header) {            	
+
 
             int nfov = 4;
             //peNC_spiral1_fa30_TR100_23052019.edb
@@ -133,22 +135,33 @@ namespace Gadgetron {
             spiralTraj.calcTrajectory(kx,ky,dcf,ADCsamples,std::ceil(fov_/Resolution_mm),ADCShift_us,GradDelay_us);
 
 
-            
-            auto kx_ptr= &kx;
-            auto ky_ptr= &ky;
-            auto dcf_ptr=&dcf;
-
-            hoNDArray<floatd2> trajectories(std::min(Nints_,ADCsamples));
+            hoNDArray<floatd2> trajectories((Nints_*ADCsamples));
             size_t nsamples = trajectories.get_number_of_elements();
-           // std::transform(kx_ptr,kx_ptr+nsamples,ky_ptr,trajectories.begin(),[](auto x, auto y){return -floatd2(x,y)/2;});
+             GDEBUG("nsamples:             %d\n", nsamples);
+             GDEBUG("sizeof(dcf)/sizeof(dcf[0]) %f\n", (sizeof(dcf)/sizeof(dcf[0])));
+            std::transform(kx.begin(),kx.begin()+nsamples,ky.begin(),trajectories.begin(),[](auto x, auto y){return floatd2(x,y)/10;});
+            trajectories.reshape({ADCsamples,Nints_});
+            hoNDArray<float> weights(nsamples);
+            std::transform(dcf.begin(),dcf.begin()+nsamples,weights.begin(),[](auto x){return x;});
+            weights.reshape({ADCsamples,Nints_});
 
+            std::ofstream myfile1;
+            myfile1.open ("/home/praveen/dcf.txt");
+            for(std::vector<float>::iterator it = dcf.begin();it!=dcf.end();++it){
+                myfile1 << *it<< ", "; //<<ky[i]<<", "<<dcf[i]<< ", ";
+            }
+            myfile1<<std::endl;
+            myfile1.close();
 
-        
-            hoNDArray<float> weights;
-
+            std::ofstream myfile2;
+            myfile2.open ("/home/praveen/ky.txt");
+            for(std::vector<float>::iterator it = ky.begin();it!=ky.end();++it){
+                myfile2 << *it<< ", "; //<<ky[i]<<", "<<dcf[i]<< ", ";
+            }
+            myfile2<<std::endl;
+            myfile2.close();
             std::ofstream myfile;
-            myfile.open ("/home/praveen/dumpfile.txt");
-            int i=0;
+            myfile.open ("/home/praveen/kx.txt");
             for(std::vector<float>::iterator it = kx.begin();it!=kx.end();++it){
                 myfile << *it<< ", "; //<<ky[i]<<", "<<dcf[i]<< ", ";
             }
